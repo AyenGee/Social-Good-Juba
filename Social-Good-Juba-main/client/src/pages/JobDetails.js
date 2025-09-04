@@ -48,6 +48,28 @@ const JobDetails = () => {
     }
   };
 
+  const handleApplicationAction = async (applicationId, action) => {
+    try {
+      await axios.post(`/api/jobs/${id}/applications/${applicationId}/${action}`);
+      alert(`Application ${action}ed successfully!`);
+      fetchJobDetails(); // Refresh to show updated status
+    } catch (error) {
+      setError(error.response?.data?.error || `Failed to ${action} application`);
+    }
+  };
+
+  const handleCompleteJob = async () => {
+    if (window.confirm('Are you sure you want to mark this job as complete? This action cannot be undone.')) {
+    try {
+      await axios.post(`/api/jobs/${id}/complete`);
+        alert('Job marked as complete successfully!');
+        fetchJobDetails(); // Refresh to show updated status
+    } catch (error) {
+      setError(error.response?.data?.error || 'Failed to complete job');
+    }
+    }
+  };
+
   const getStatusConfig = (status) => {
     const configs = {
       posted: { label: 'Open for Applications', className: 'status-open', icon: '📋' },
@@ -109,7 +131,7 @@ const JobDetails = () => {
       {/* Main Job Card */}
       <div className="job-card">
         {/* Job Header */}
-        <div className="job-header">
+      <div className="job-header">
           <h1 className="job-title">{job.title}</h1>
           <div className="job-status">
             <span className={`status-badge ${statusConfig.className}`}>
@@ -133,7 +155,7 @@ const JobDetails = () => {
             <span className="info-label">⏱️ Timeline:</span>
             <span className="info-value">{job.timeline || 'Not specified'}</span>
           </div>
-        </div>
+      </div>
 
         {/* Job Description */}
         <div className="job-description-section">
@@ -141,8 +163,8 @@ const JobDetails = () => {
           <p>{job.description}</p>
         </div>
 
-        {/* Applications Section */}
-        {applications.length > 0 && (
+        {/* Applications Section - Only visible to job owners (clients) */}
+        {applications.length > 0 && isJobOwner && (
           <div className="applications-section">
             <h3>Freelancers Who Applied ({applications.length})</h3>
             <div className="applications-list">
@@ -179,6 +201,26 @@ const JobDetails = () => {
                        '⏳ Pending'}
                     </span>
                   </div>
+
+                  {/* Client Action Buttons */}
+                  {isJobOwner && job.status === 'posted' && application.status === 'pending' && (
+                    <div className="application-actions">
+                      <button 
+                        className="btn btn-success btn-sm"
+                        onClick={() => handleApplicationAction(application.id, 'approve')}
+                      >
+                        <span className="btn-icon">✅</span>
+                        Approve
+                      </button>
+                      <button 
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleApplicationAction(application.id, 'reject')}
+                      >
+                        <span className="btn-icon">❌</span>
+                        Reject
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -210,6 +252,17 @@ const JobDetails = () => {
             >
               <span className="btn-icon">📋</span>
               Apply Now
+            </button>
+          )}
+
+          {/* Complete Job Button (for job owners) */}
+          {currentUser && isJobOwner && job.status === 'in_progress' && (
+            <button 
+              className="btn btn-success"
+              onClick={handleCompleteJob}
+            >
+              <span className="btn-icon">✅</span>
+              Mark as Complete
             </button>
           )}
 

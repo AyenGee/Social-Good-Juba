@@ -389,6 +389,143 @@ router.get('/:id/applications', rateLimitMiddleware(generalRateLimiter), async (
     }
 });
 
+// Approve an application
+router.post('/:id/applications/:applicationId/approve', authenticateToken, async (req, res) => {
+    try {
+        const { id, applicationId } = req.params;
+        
+        // Check if job exists and belongs to the user
+        const { data: job, error: jobError } = await supabase
+            .from('jobs')
+            .select('*')
+            .eq('id', id)
+            .eq('client_id', req.user.id)
+            .single();
+            
+        if (jobError || !job) {
+            return res.status(404).json({ error: 'Job not found or you do not have permission' });
+        }
+        
+        // Check if job is still open for applications
+        if (job.status !== 'posted') {
+            return res.status(400).json({ error: 'Job is no longer open for applications' });
+        }
+        
+        // Check if application exists and is pending
+        const { data: application, error: appError } = await supabase
+            .from('job_applications')
+            .select('*, freelancer:users(*)')
+            .eq('id', applicationId)
+            .eq('job_id', id)
+            .eq('status', 'pending')
+            .single();
+            
+        if (appError || !application) {
+            return res.status(404).json({ error: 'Application not found or already processed' });
+        }
+        
+        // Update the application status to accepted
+        const { error: updateAppError } = await supabase
+            .from('job_applications')
+            .update({ status: 'accepted' })
+            .eq('id', applicationId);
+            
+        if (updateAppError) {
+            return res.status(400).json({ error: 'Failed to approve application' });
+        }
+        
+        // Reject all other pending applications for this job
+        await supabase
+            .from('job_applications')
+            .update({ status: 'rejected' })
+            .eq('job_id', id)
+            .eq('status', 'pending')
+            .neq('id', applicationId);
+        
+        // Update job status to in_progress
+        const { error: updateJobError } = await supabase
+            .from('jobs')
+            .update({ 
+                status: 'in_progress',
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', id);
+            
+        if (updateJobError) {
+            console.error('Failed to update job status:', updateJobError);
+        }
+        
+        // Create transaction record
+        const { error: transactionError } = await supabase
+            .from('transactions')
+            .insert([
+                {
+                    job_id: id,
+                    client_id: req.user.id,
+                    freelancer_id: application.freelancer_id,
+                    amount: application.proposed_rate,
+                    payment_status: 'pending'
+                }
+            ]);
+            
+        if (transactionError) {
+            console.error('Transaction creation error:', transactionError);
+        }
+        
+        res.json({ message: 'Application approved successfully', application });
+    } catch (error) {
+        console.error('Application approval error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Reject an application
+router.post('/:id/applications/:applicationId/reject', authenticateToken, async (req, res) => {
+    try {
+        const { id, applicationId } = req.params;
+        
+        // Check if job exists and belongs to the user
+        const { data: job, error: jobError } = await supabase
+            .from('jobs')
+            .select('*')
+            .eq('id', id)
+            .eq('client_id', req.user.id)
+            .single();
+            
+        if (jobError || !job) {
+            return res.status(404).json({ error: 'Job not found or you do not have permission' });
+        }
+        
+        // Check if application exists and is pending
+        const { data: application, error: appError } = await supabase
+            .from('job_applications')
+            .select('*')
+            .eq('id', applicationId)
+            .eq('job_id', id)
+            .eq('status', 'pending')
+            .single();
+            
+        if (appError || !application) {
+            return res.status(404).json({ error: 'Application not found or already processed' });
+        }
+        
+        // Update the application status to rejected
+        const { error: updateError } = await supabase
+            .from('job_applications')
+            .update({ status: 'rejected' })
+            .eq('id', applicationId);
+            
+        if (updateError) {
+            return res.status(400).json({ error: 'Failed to reject application' });
+        }
+        
+        res.json({ message: 'Application rejected successfully' });
+    } catch (error) {
+        console.error('Application rejection error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Get job by ID
 router.get('/:id', rateLimitMiddleware(generalRateLimiter), async (req, res) => {
     try {

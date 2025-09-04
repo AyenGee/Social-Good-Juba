@@ -98,17 +98,6 @@ const Login = () => {
         </div>
 
         {loading && <div className="spinner"></div>}
-
-        <div style={{marginTop: '20px', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '4px'}}>
-          <p style={{fontSize: '14px', margin: 0}}>
-            <strong>Troubleshooting:</strong> If Google login doesn't work, make sure:
-          </p>
-          <ul style={{fontSize: '12px', margin: '5px 0 0 0', paddingLeft: '20px'}}>
-            <li>Google OAuth is properly configured in Google Cloud Console</li>
-            <li>http://localhost:3000 is added to Authorized JavaScript origins</li>
-            <li>Your backend server is running on port 5000</li>
-          </ul>
-        </div>
       </div>
     </div>
   );
