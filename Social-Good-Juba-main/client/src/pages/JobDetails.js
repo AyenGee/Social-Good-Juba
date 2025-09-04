@@ -73,7 +73,7 @@ const JobDetails = () => {
   const getStatusConfig = (status) => {
     const configs = {
       posted: { label: 'Open for Applications', className: 'status-open', icon: '📋' },
-      in_progress: { label: 'In Progress', className: 'status-progress', icon: '⚡' },
+      in_progress: { label: 'In Progress - Freelancer Working', className: 'status-progress', icon: '⚡' },
       completed: { label: 'Completed', className: 'status-completed', icon: '✅' },
       cancelled: { label: 'Cancelled', className: 'status-cancelled', icon: '❌' },
       pending: { label: 'Pending Review', className: 'status-pending', icon: '⏳' }
@@ -155,6 +155,12 @@ const JobDetails = () => {
             <span className="info-label">⏱️ Timeline:</span>
             <span className="info-value">{job.timeline || 'Not specified'}</span>
           </div>
+          <div className="info-item">
+            <span className="info-label">📊 Job Status:</span>
+            <span className="info-value" style={{fontWeight: 'bold', color: job.status === 'in_progress' ? '#28a745' : '#6c757d'}}>
+              {job.status} {job.status === 'in_progress' ? '✅' : '❌'}
+            </span>
+          </div>
       </div>
 
         {/* Job Description */}
@@ -162,6 +168,36 @@ const JobDetails = () => {
           <h3>Description</h3>
           <p>{job.description}</p>
         </div>
+
+        {/* Accepted Freelancer Section - Show when job is in progress */}
+        {job.status === 'in_progress' && applications.length > 0 && (
+          <div className="accepted-freelancer-section">
+            <h3>👷 Freelancer Working on This Job</h3>
+            {applications
+              .filter(app => app.status === 'accepted')
+              .map((application) => (
+                <div key={application.id} className="accepted-freelancer-card">
+                  <div className="freelancer-info">
+                    <div className="freelancer-avatar-large">
+                      {application.freelancer?.username?.charAt(0).toUpperCase() || 'F'}
+                    </div>
+                    <div className="freelancer-details">
+                      <h4 className="freelancer-name">
+                        {application.freelancer?.username || 'Anonymous Freelancer'}
+                      </h4>
+                      <p className="freelancer-rate">
+                        <span className="rate-label">Agreed Rate:</span>
+                        <span className="rate-value">R{application.proposed_rate}</span>
+                      </p>
+                      <p className="freelancer-status">
+                        <span className="status-badge status-accepted">✅ Accepted & Working</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+        )}
 
         {/* Applications Section - Only visible to job owners (clients) */}
         {applications.length > 0 && isJobOwner && (
@@ -255,15 +291,46 @@ const JobDetails = () => {
             </button>
           )}
 
+          {/* Debug: Why Complete Button Not Showing */}
+          <div style={{background: '#fff3cd', padding: '10px', margin: '10px 0', border: '1px solid #ffeaa7', borderRadius: '5px'}}>
+            <strong>🔍 Complete Button Debug:</strong><br/>
+            Current User: {currentUser?.id ? '✅ Logged in' : '❌ Not logged in'}<br/>
+            Is Job Owner: {isJobOwner ? '✅ Yes' : '❌ No'}<br/>
+            Job Status: {job.status} {job.status === 'in_progress' ? '✅' : '❌'}<br/>
+            Should Show Button: {currentUser && isJobOwner && job.status === 'in_progress' ? '✅ YES' : '❌ NO'}<br/>
+            {isJobOwner && job.status !== 'in_progress' && (
+              <button 
+                onClick={async () => {
+                  try {
+                    await axios.patch(`/api/jobs/${id}`, { status: 'in_progress' });
+                    alert('Job status updated to in_progress!');
+                    fetchJobDetails();
+                  } catch (error) {
+                    alert('Failed to update job status: ' + error.message);
+                  }
+                }}
+                style={{background: '#007bff', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '3px', marginTop: '5px'}}
+              >
+                🔧 Force Set to In Progress (TEST)
+              </button>
+            )}
+          </div>
+
           {/* Complete Job Button (for job owners) */}
           {currentUser && isJobOwner && job.status === 'in_progress' && (
-            <button 
-              className="btn btn-success"
-              onClick={handleCompleteJob}
-            >
-              <span className="btn-icon">✅</span>
-              Mark as Complete
-            </button>
+            <div className="complete-job-section">
+              <div className="complete-job-notice">
+                <span className="notice-icon">🎉</span>
+                <p>Great! You have a freelancer working on this job. When the work is finished, mark it as complete.</p>
+              </div>
+              <button 
+                className="btn btn-success btn-complete"
+                onClick={handleCompleteJob}
+              >
+                <span className="btn-icon">✅</span>
+                Mark Job as Complete
+              </button>
+            </div>
           )}
 
           {/* Back to Dashboard */}

@@ -1,0 +1,274 @@
+.notifications-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.notifications-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.notifications-header h1 {
+    margin: 0;
+    font-size: 28px;
+    color: #333;
+}
+
+.notification-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    display: block;
+    font-size: 24px;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.stat-label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.notifications-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 16px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.filter-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.filter-tab {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    background: white;
+    color: #666;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.filter-tab:hover {
+    border-color: #007bff;
+    color: #007bff;
+}
+
+.filter-tab.active {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.action-btn {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    background: white;
+    color: #666;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.mark-read-btn {
+    border-color: #28a745;
+    color: #28a745;
+}
+
+.mark-read-btn:hover {
+    background-color: #28a745;
+    color: white;
+}
+
+.clear-all-btn {
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.clear-all-btn:hover {
+    background-color: #dc3545;
+    color: white;
+}
+
+.notifications-content {
+    min-height: 400px;
+}
+
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+    color: #333;
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.notifications-list {
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    overflow: hidden;
+}
+
+.load-more-container {
+    padding: 20px;
+    text-align: center;
+    border-top: 1px solid #e0e0e0;
+    background-color: #f8f9fa;
+}
+
+.load-more-btn {
+    padding: 10px 24px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
+}
+
+.load-more-btn:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+.load-more-btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .notifications-page {
+        padding: 16px;
+    }
+    
+    .notifications-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .notifications-header h1 {
+        font-size: 24px;
+    }
+    
+    .notification-stats {
+        gap: 16px;
+    }
+    
+    .stat-number {
+        font-size: 20px;
+    }
+    
+    .notifications-controls {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+    }
+    
+    .filter-tabs {
+        justify-content: center;
+    }
+    
+    .action-buttons {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .notifications-page {
+        padding: 12px;
+    }
+    
+    .notifications-header h1 {
+        font-size: 20px;
+    }
+    
+    .notification-stats {
+        gap: 12px;
+    }
+    
+    .stat-number {
+        font-size: 18px;
+    }
+    
+    .stat-label {
+        font-size: 10px;
+    }
+    
+    .filter-tab {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+    
+    .action-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+}

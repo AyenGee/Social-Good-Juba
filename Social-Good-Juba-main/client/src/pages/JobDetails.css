@@ -370,6 +370,163 @@
   transform: translateY(-1px);
 }
 
+/* Complete Job Section */
+.complete-job-section {
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  border: 2px solid #28a745;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.complete-job-notice {
+  margin-bottom: 16px;
+}
+
+.notice-icon {
+  font-size: 24px;
+  margin-right: 8px;
+}
+
+.complete-job-notice p {
+  margin: 0;
+  color: #155724;
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.btn-complete {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+  transition: all 0.3s ease;
+}
+
+.btn-complete:hover {
+  background: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
+}
+
+/* Accepted Freelancer Section */
+.accepted-freelancer-section {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border: 2px solid #2196f3;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.accepted-freelancer-section h3 {
+  margin: 0 0 16px 0;
+  color: #1565c0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.accepted-freelancer-card {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.freelancer-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.freelancer-avatar-large {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2196f3, #1976d2);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.freelancer-details h4 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.freelancer-rate {
+  margin: 0 0 8px 0;
+  color: #666;
+}
+
+.rate-label {
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.rate-value {
+  font-weight: 600;
+  color: #28a745;
+  font-size: 16px;
+}
+
+.freelancer-status {
+  margin: 0;
+}
+
+.status-accepted {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+/* Mobile Responsiveness for New Sections */
+@media (max-width: 768px) {
+  .complete-job-section {
+    padding: 16px;
+    margin: 16px 0;
+  }
+  
+  .complete-job-notice p {
+    font-size: 14px;
+  }
+  
+  .btn-complete {
+    font-size: 14px;
+    padding: 10px 20px;
+  }
+  
+  .accepted-freelancer-section {
+    padding: 16px;
+    margin: 16px 0;
+  }
+  
+  .accepted-freelancer-section h3 {
+    font-size: 16px;
+  }
+  
+  .freelancer-avatar-large {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+  }
+  
+  .freelancer-details h4 {
+    font-size: 16px;
+  }
+  
+  .freelancer-info {
+    gap: 12px;
+  }
+}
+
 .btn-danger {
   background: #dc3545;
   color: white;

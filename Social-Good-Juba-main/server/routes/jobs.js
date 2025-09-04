@@ -6,6 +6,7 @@ const { validateJobPosting } = require('../middleware/validation');
 const { rateLimitMiddleware, generalRateLimiter } = require('../middleware/rateLimit');
 const { sendEmail, emailTemplates } = require('../services/emailService');
 const { processPayment } = require('../services/paymentService');
+const notificationService = require('../services/notificationService');
 
 // Debug endpoint to check database status
 router.get('/debug/database', async (req, res) => {
@@ -446,8 +447,7 @@ router.post('/:id/applications/:applicationId/approve', authenticateToken, async
         const { error: updateJobError } = await supabase
             .from('jobs')
             .update({ 
-                status: 'in_progress',
-                updated_at: new Date().toISOString()
+                status: 'in_progress'
             })
             .eq('id', id);
             
@@ -470,6 +470,13 @@ router.post('/:id/applications/:applicationId/approve', authenticateToken, async
             
         if (transactionError) {
             console.error('Transaction creation error:', transactionError);
+        }
+        
+        // Notify freelancer about application approval
+        try {
+            await notificationService.notifyApplicationStatus(application, job, req.user, 'accepted');
+        } catch (notificationError) {
+            console.error('Notification sending failed:', notificationError);
         }
         
         res.json({ message: 'Application approved successfully', application });
@@ -517,6 +524,13 @@ router.post('/:id/applications/:applicationId/reject', authenticateToken, async 
             
         if (updateError) {
             return res.status(400).json({ error: 'Failed to reject application' });
+        }
+        
+        // Notify freelancer about application rejection
+        try {
+            await notificationService.notifyApplicationStatus(application, job, req.user, 'rejected');
+        } catch (notificationError) {
+            console.error('Notification sending failed:', notificationError);
         }
         
         res.json({ message: 'Application rejected successfully' });
@@ -612,6 +626,14 @@ router.post('/', authenticateToken, async (req, res) => {
             // Don't fail the job creation if email fails
         }
         
+        // Notify freelancers about the new job
+        try {
+            await notificationService.notifyNewJob(job);
+        } catch (notificationError) {
+            console.error('Notification sending failed, but job was created:', notificationError);
+            // Don't fail the job creation if notifications fail
+        }
+        
         console.log('Job created successfully:', job);
         res.status(201).json({ message: 'Job created successfully', job });
     } catch (error) {
@@ -667,25 +689,36 @@ router.post('/:id/apply', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'Application failed' });
         }
         
-        // Notify client
-        await sendEmail(
-            job.client.email,
-            emailTemplates.freelancerApplied(
+        // Notify client via email
+        try {
+            await sendEmail(
                 job.client.email,
-                req.user.email,
-                job.title
-            ).subject,
-            emailTemplates.freelancerApplied(
-                job.client.email,
-                req.user.email,
-                job.title
-            ).text,
-            emailTemplates.freelancerApplied(
-                job.client.email,
-                req.user.email,
-                job.title
-            ).html
-        );
+                emailTemplates.freelancerApplied(
+                    job.client.email,
+                    req.user.email,
+                    job.title
+                ).subject,
+                emailTemplates.freelancerApplied(
+                    job.client.email,
+                    req.user.email,
+                    job.title
+                ).text,
+                emailTemplates.freelancerApplied(
+                    job.client.email,
+                    req.user.email,
+                    job.title
+                ).html
+            );
+        } catch (emailError) {
+            console.error('Email sending failed, but application was created:', emailError);
+        }
+        
+        // Notify client via in-app notification
+        try {
+            await notificationService.notifyJobApplication(application, job, req.user);
+        } catch (notificationError) {
+            console.error('Notification sending failed, but application was created:', notificationError);
+        }
         
         res.status(201).json({ message: 'Application submitted successfully', application });
     } catch (error) {
@@ -873,6 +906,21 @@ router.post('/:id/complete', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'Failed to complete job' });
         }
         
+        // Get the accepted freelancer for notifications
+        const { data: acceptedApplication } = await supabase
+            .from('job_applications')
+            .select('freelancer_id')
+            .eq('job_id', id)
+            .eq('status', 'accepted')
+            .single();
+        
+        // Notify about job completion
+        try {
+            await notificationService.notifyJobCompletion(updatedJob, acceptedApplication?.freelancer_id);
+        } catch (notificationError) {
+            console.error('Notification sending failed:', notificationError);
+        }
+        
         res.json({ message: 'Job completed successfully', job: updatedJob });
     } catch (error) {
         console.error('Job completion error:', error);
@@ -910,8 +958,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
                 description,
                 location,
                 budget: budget ? parseFloat(budget) : null,
-                timeline,
-                updated_at: new Date().toISOString()
+                timeline
             })
             .eq('id', id)
             .select()
@@ -1217,7 +1264,7 @@ router.get('/batch-status', authenticateToken, async (req, res) => {
         
         const { data: jobs, error } = await supabase
             .from('jobs')
-            .select('id, title, status, created_at, updated_at')
+            .select('id, title, status, created_at')
             .in('id', jobIdArray);
             
         if (error) {
@@ -1228,6 +1275,44 @@ router.get('/batch-status', authenticateToken, async (req, res) => {
         res.json({ jobs: jobs || [] });
     } catch (error) {
         console.error('Batch status fetch error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Update job status (for testing/debugging)
+router.patch('/:id', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        
+        // Verify job exists and user owns it
+        const { data: job, error: jobError } = await supabase
+            .from('jobs')
+            .select('*')
+            .eq('id', id)
+            .eq('client_id', req.user.id)
+            .single();
+            
+        if (jobError || !job) {
+            return res.status(404).json({ error: 'Job not found or access denied' });
+        }
+        
+        // Update job status
+        const { error: updateError } = await supabase
+            .from('jobs')
+            .update({ 
+                status: status
+            })
+            .eq('id', id);
+            
+        if (updateError) {
+            console.error('Job status update error:', updateError);
+            return res.status(400).json({ error: 'Failed to update job status' });
+        }
+        
+        res.json({ message: 'Job status updated successfully', status: status });
+    } catch (error) {
+        console.error('Job status update error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

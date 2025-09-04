@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import ChatWindow from './ChatWindow';
+import NotificationBell from './NotificationBell';
 
 const Header = () => {
   const { currentUser, logout } = useAuth();
@@ -56,18 +57,21 @@ const Header = () => {
 
         <div className="navbar-actions">
           {currentUser && (
-            <button 
-              className="chat-button" 
-              onClick={() => setIsChatOpen(true)}
-              title="Open Messages"
-            >
-              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-              {unreadCount > 0 && (
-                <span className="chat-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
-              )}
-            </button>
+            <>
+              <NotificationBell />
+              <button 
+                className="chat-button" 
+                onClick={() => setIsChatOpen(true)}
+                title="Open Messages"
+              >
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                {unreadCount > 0 && (
+                  <span className="chat-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+                )}
+              </button>
+            </>
           )}
           
           {currentUser ? (
@@ -104,6 +108,13 @@ const Header = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
                       Dashboard
+                    </Link>
+                    
+                    <Link to="/notifications" className="user-menu-item" onClick={closeMenu}>
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM4.828 7l2.586 2.586a2 2 0 002.828 0L12.828 7H4.828zM4.828 17h8l-2.586-2.586a2 2 0 00-2.828 0L4.828 17z" />
+                      </svg>
+                      Notifications
                     </Link>
                     
                     {currentUser.isAdmin && (

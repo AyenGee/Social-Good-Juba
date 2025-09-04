@@ -10,10 +10,14 @@ const userRoutes = require('./routes/users');
 const jobRoutes = require('./routes/jobs');
 const ratingRoutes = require('./routes/ratings');
 const chatRoutes = require('./routes/chat');
+const notificationRoutes = require('./routes/notifications');
 
 // Import middleware
 const { authenticateToken } = require('./middleware/auth');
 const { rateLimitMiddleware, generalRateLimiter, chatRateLimiter } = require('./middleware/rateLimit');
+
+// Import services
+const notificationService = require('./services/notificationService');
 
 const app = express();
 const server = http.createServer(app);
@@ -23,6 +27,9 @@ const io = socketIo(server, {
         methods: ["GET", "POST"]
     }
 });
+
+// Set up notification service with Socket.IO
+notificationService.setSocketIO(io);
 
 // Middleware
 app.use(helmet());
@@ -38,15 +45,28 @@ app.use('/api/users', rateLimitMiddleware(generalRateLimiter), userRoutes);
 app.use('/api/jobs', rateLimitMiddleware(generalRateLimiter), jobRoutes);
 app.use('/api/ratings', rateLimitMiddleware(generalRateLimiter), ratingRoutes);
 app.use('/api/chat', rateLimitMiddleware(chatRateLimiter), chatRoutes);
+app.use('/api/notifications', rateLimitMiddleware(generalRateLimiter), notificationRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', message: 'Juba server is running' });
 });
 
-// Socket.io for real-time messaging
+// Socket.io for real-time messaging and notifications
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
+    
+    // Join user-specific room for notifications
+    socket.on('join-user-room', (userId) => {
+        socket.join(`user_${userId}`);
+        console.log(`User ${socket.id} joined user room ${userId}`);
+    });
+    
+    // Leave user-specific room
+    socket.on('leave-user-room', (userId) => {
+        socket.leave(`user_${userId}`);
+        console.log(`User ${socket.id} left user room ${userId}`);
+    });
     
     // Join conversation room
     socket.on('join-conversation', (conversationId) => {
