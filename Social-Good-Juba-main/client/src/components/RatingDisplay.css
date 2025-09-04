@@ -1,0 +1,144 @@
+/* Rating Display Component */
+.rating-display {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-6);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+  transition: all var(--transition-normal);
+}
+
+.rating-display.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.rating-display.error {
+  border-color: var(--error);
+  background: var(--error-50);
+}
+
+.rating-display.no-reviews {
+  text-align: center;
+  color: var(--gray-500);
+}
+
+.rating-stars {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  margin-bottom: var(--spacing-4);
+}
+
+.rating-stars .star {
+  font-size: var(--font-size-lg);
+  color: var(--gray-300);
+  transition: color var(--transition-fast);
+}
+
+.rating-stars .star.filled {
+  color: var(--warning);
+}
+
+.rating-stars .star.half {
+  color: var(--warning);
+  position: relative;
+}
+
+.rating-stars .star.half::after {
+  content: '★';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 50%;
+  overflow: hidden;
+  color: var(--warning);
+}
+
+.rating-stars .star.empty {
+  color: var(--gray-300);
+}
+
+.rating-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  margin-bottom: var(--spacing-6);
+  flex-wrap: wrap;
+}
+
+.rating-value {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.rating-count {
+  color: var(--gray-600);
+  font-size: var(--font-size-base);
+}
+
+.rating-breakdown {
+  display: grid;
+  gap: var(--spacing-3);
+}
+
+.rating-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.stars-label {
+  min-width: 60px;
+  font-size: var(--font-size-sm);
+  color: var(--gray-600);
+}
+
+.rating-bar-container {
+  flex: 1;
+  height: 8px;
+  background: var(--gray-200);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.rating-bar-fill {
+  height: 100%;
+  background: var(--warning);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-normal);
+}
+
+.rating-count-label {
+  min-width: 40px;
+  font-size: var(--font-size-sm);
+  color: var(--gray-600);
+  text-align: right;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .rating-display {
+    padding: var(--spacing-4);
+  }
+  
+  .rating-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-2);
+  }
+  
+  .rating-value {
+    font-size: var(--font-size-2xl);
+  }
+  
+  .rating-stars .star {
+    font-size: var(--font-size-base);
+  }
+}
+
+
+
+
+
