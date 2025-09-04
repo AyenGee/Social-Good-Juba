@@ -212,6 +212,139 @@
   border-left: 4px solid #007bff;
 }
 
+/* Applications Section */
+.applications-section {
+  margin-bottom: 30px;
+}
+
+.applications-section h3 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.applications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.application-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.application-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.application-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.freelancer-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.freelancer-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.freelancer-details {
+  flex: 1;
+}
+
+.freelancer-name {
+  margin: 0 0 5px 0;
+  color: #2c3e50;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.application-date {
+  margin: 0;
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.application-rate {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.rate-label {
+  font-size: 12px;
+  color: #6c757d;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rate-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #28a745;
+}
+
+.application-message {
+  margin-bottom: 15px;
+  padding: 15px;
+  background: white;
+  border-radius: 8px;
+  border-left: 3px solid #007bff;
+}
+
+.application-message p {
+  margin: 0;
+  color: #495057;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.application-status {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.status-accepted {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-rejected {
+  background: #f8d7da;
+  color: #721c24;
+}
+
 /* Job Actions */
 .job-actions {
   display: flex;
@@ -375,6 +508,19 @@
   }
   
   .info-label {
+    min-width: auto;
+  }
+  
+  .application-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .application-rate {
+    align-items: flex-start;
+  }
+  
+  .freelancer-info {
     min-width: auto;
   }
 }

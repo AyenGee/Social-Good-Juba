@@ -8,6 +8,7 @@ import './JobDetails.css';
 const JobDetails = () => {
   const { id } = useParams();
   const [job, setJob] = useState(null);
+  const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [applicationData, setApplicationData] = useState({
@@ -22,8 +23,12 @@ const JobDetails = () => {
 
   const fetchJobDetails = async () => {
     try {
-      const response = await axios.get(`/api/jobs/${id}`);
-      setJob(response.data);
+      const [jobResponse, applicationsResponse] = await Promise.all([
+        axios.get(`/api/jobs/${id}`),
+        axios.get(`/api/jobs/${id}/applications`)
+      ]);
+      setJob(jobResponse.data);
+      setApplications(applicationsResponse.data);
     } catch (error) {
       setError('Failed to fetch job details');
     } finally {
@@ -135,6 +140,50 @@ const JobDetails = () => {
           <h3>Description</h3>
           <p>{job.description}</p>
         </div>
+
+        {/* Applications Section */}
+        {applications.length > 0 && (
+          <div className="applications-section">
+            <h3>Freelancers Who Applied ({applications.length})</h3>
+            <div className="applications-list">
+              {applications.map((application) => (
+                <div key={application.id} className="application-card">
+                  <div className="application-header">
+                    <div className="freelancer-info">
+                      <div className="freelancer-avatar">
+                        {application.freelancer?.username?.charAt(0).toUpperCase() || 'F'}
+                      </div>
+                      <div className="freelancer-details">
+                        <h4 className="freelancer-name">
+                          {application.freelancer?.username || 'Anonymous Freelancer'}
+                        </h4>
+                        <p className="application-date">
+                          Applied on {new Date(application.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="application-rate">
+                      <span className="rate-label">Proposed Rate:</span>
+                      <span className="rate-value">R{application.proposed_rate}</span>
+                    </div>
+                  </div>
+                  {application.message && (
+                    <div className="application-message">
+                      <p>{application.message}</p>
+                    </div>
+                  )}
+                  <div className="application-status">
+                    <span className={`status-badge ${application.status === 'accepted' ? 'status-accepted' : application.status === 'rejected' ? 'status-rejected' : 'status-pending'}`}>
+                      {application.status === 'accepted' ? '✅ Accepted' : 
+                       application.status === 'rejected' ? '❌ Rejected' : 
+                       '⏳ Pending'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Actions */}
         <div className="job-actions">

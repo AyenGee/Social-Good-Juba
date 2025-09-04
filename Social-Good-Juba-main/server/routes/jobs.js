@@ -363,6 +363,32 @@ router.get('/freelancer-stats', authenticateToken, async (req, res) => {
     }
 });
 
+// Get applications for a specific job
+router.get('/:id/applications', rateLimitMiddleware(generalRateLimiter), async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const { data: applications, error } = await supabase
+            .from('job_applications')
+            .select(`
+                *,
+                freelancer:users(id, username, email)
+            `)
+            .eq('job_id', id)
+            .order('created_at', { ascending: false });
+            
+        if (error) {
+            console.error('Applications fetch error:', error);
+            return res.status(400).json({ error: 'Failed to fetch applications' });
+        }
+        
+        res.json(applications || []);
+    } catch (error) {
+        console.error('Applications fetch error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Get job by ID
 router.get('/:id', rateLimitMiddleware(generalRateLimiter), async (req, res) => {
     try {
