@@ -20,7 +20,10 @@ export const AuthProvider = ({ children }) => {
       // Fetch user profile
       axios.get('/api/profile')
         .then(response => {
-          setCurrentUser(response.data);
+          // Normalize shape: backend returns { user, freelancer_profile }
+          const data = response.data;
+          const normalizedUser = data?.user || data || null;
+          setCurrentUser(normalizedUser);
         })
         .catch(error => {
           console.error('Auth check failed:', error);
@@ -38,7 +41,9 @@ export const AuthProvider = ({ children }) => {
   const login = (token, user) => {
     localStorage.setItem('juba_token', token);
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    setCurrentUser(user);
+    // Normalize potential shapes
+    const normalizedUser = user?.user || user || null;
+    setCurrentUser(normalizedUser);
   };
 
   const logout = () => {
