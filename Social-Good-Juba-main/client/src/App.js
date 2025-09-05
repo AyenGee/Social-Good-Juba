@@ -11,6 +11,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import TestDatabase from './pages/TestDatabase';
 import JobSearch from './pages/JobSearch';
 import JobDetails from './pages/JobDetails';
+import Learn from './pages/Learn';
 import Plans from './pages/Plans';
 import Notifications from './pages/Notifications';
 import Profile from './pages/Profile';
@@ -44,6 +45,7 @@ function App() {
                     <Route path="/test-db" element={<TestDatabase />} />
                     <Route path="/jobs" element={<JobSearch />} />
                     <Route path="/job/:id" element={<JobDetails />} />
+                    <Route path="/learn" element={<Learn />} />
                     <Route path="/plans" element={<Plans />} />
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/profile" element={<Profile />} />

@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import ChatButton from '../components/ChatButton';
+import RatingDisplay from '../components/RatingDisplay';
 import './JobDetails.css';
 
 const JobDetails = () => {
@@ -161,6 +162,16 @@ const JobDetails = () => {
               {job.status} {job.status === 'in_progress' ? '✅' : '❌'}
             </span>
           </div>
+          
+          {/* Client Rating Display - Show for freelancers viewing job details */}
+          {!isJobOwner && job.client_id && (
+            <div className="info-item client-rating-item">
+              <span className="info-label">👤 Client Rating:</span>
+              <div className="info-value">
+                <RatingDisplay userId={job.client_id} className="client-rating" />
+              </div>
+            </div>
+          )}
       </div>
 
         {/* Job Description */}
@@ -189,6 +200,10 @@ const JobDetails = () => {
                         <span className="rate-label">Agreed Rate:</span>
                         <span className="rate-value">R{application.proposed_rate}</span>
                       </p>
+                      {/* Freelancer Rating Display for Accepted Freelancer */}
+                      <div className="freelancer-rating">
+                        <RatingDisplay userId={application.freelancer_id} className="accepted-freelancer-rating" />
+                      </div>
                       <p className="freelancer-status">
                         <span className="status-badge status-accepted">✅ Accepted & Working</span>
                       </p>
@@ -218,6 +233,10 @@ const JobDetails = () => {
                         <p className="application-date">
                           Applied on {new Date(application.created_at).toLocaleDateString()}
                         </p>
+                        {/* Freelancer Rating Display */}
+                        <div className="freelancer-rating">
+                          <RatingDisplay userId={application.freelancer_id} className="application-rating" />
+                        </div>
                       </div>
                     </div>
                     <div className="application-rate">

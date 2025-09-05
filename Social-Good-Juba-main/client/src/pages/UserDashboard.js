@@ -152,7 +152,14 @@ const UserDashboard = () => {
 
   const confirmDeleteJob = async () => {
     try {
-      await axios.delete(`/api/jobs/${deletingJobId}`);
+      console.log('=== CLIENT DELETE JOB DEBUG ===');
+      console.log('Deleting job ID:', deletingJobId);
+      console.log('Current user:', currentUser);
+      console.log('Auth token:', localStorage.getItem('juba_token'));
+      
+      const response = await axios.delete(`/api/jobs/${deletingJobId}`);
+      console.log('Delete response:', response);
+      
       setNotification({
         type: 'success',
         message: 'Job deleted successfully!'
@@ -162,9 +169,14 @@ const UserDashboard = () => {
       refreshData();
     } catch (error) {
       console.error('Error deleting job:', error);
+      console.error('Error response:', error.response);
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      
+      const errorMessage = error.response?.data?.error || 'Please try again.';
       setNotification({
         type: 'error',
-        message: 'Failed to delete job. Please try again.'
+        message: `Failed to delete job: ${errorMessage}`
       });
     }
   };
