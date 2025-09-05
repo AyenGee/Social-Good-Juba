@@ -4,6 +4,7 @@
   "description": "Uber for odd jobs platform",
   "main": "server/index.js",
   "scripts": {
+    "start": "node server/index.js",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "nodemon server/index.js",
     "client": "cd client && npm start",
@@ -12,6 +13,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.8",
+    "all": "^0.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",

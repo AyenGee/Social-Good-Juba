@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Profile Debug Tool</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
+        button { padding: 10px 15px; margin: 5px; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Profile Debug Tool</h1>
+    
+    <div class="debug-section">
+        <h2>1. Check Authentication</h2>
+        <button onclick="checkAuth()">Check Auth Status</button>
+        <div id="auth-status"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>2. Test Profile API</h2>
+        <button onclick="testProfileAPI()">Test Profile API</button>
+        <div id="api-status"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>3. Check Server Health</h2>
+        <button onclick="checkServerHealth()">Check Server</button>
+        <div id="server-status"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>4. Debug Info</h2>
+        <button onclick="showDebugInfo()">Show Debug Info</button>
+        <div id="debug-info"></div>
+    </div>
+
+    <script>
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+            
+            let status = document.getElementById('auth-status');
+            
+            if (!token) {
+                status.innerHTML = '<div class="error">❌ No token found in localStorage</div>';
+                return;
+            }
+            
+            if (!user) {
+                status.innerHTML = '<div class="error">❌ No user data found in localStorage</div>';
+                return;
+            }
+            
+            try {
+                const userData = JSON.parse(user);
+                status.innerHTML = `
+                    <div class="success">✅ Token found</div>
+                    <div class="info">User: ${userData.email || 'Unknown'}</div>
+                    <div class="info">Role: ${userData.role || 'Unknown'}</div>
+                    <div class="info">Token: ${token.substring(0, 20)}...</div>
+                `;
+            } catch (e) {
+                status.innerHTML = '<div class="error">❌ Invalid user data in localStorage</div>';
+            }
+        }
+        
+        async function testProfileAPI() {
+            const token = localStorage.getItem('token');
+            const status = document.getElementById('api-status');
+            
+            if (!token) {
+                status.innerHTML = '<div class="error">❌ No token found. Please log in first.</div>';
+                return;
+            }
+            
+            try {
+                status.innerHTML = '<div class="info">🔄 Testing profile API...</div>';
+                
+                const response = await fetch('/api/profile', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    status.innerHTML = `
+                        <div class="error">❌ API Error: ${response.status}</div>
+                        <pre>${JSON.stringify(errorData, null, 2)}</pre>
+                    `;
+                    return;
+                }
+                
+                const data = await response.json();
+                status.innerHTML = `
+                    <div class="success">✅ Profile API working!</div>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+            } catch (error) {
+                status.innerHTML = `
+                    <div class="error">❌ Network Error</div>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+        
+        async function checkServerHealth() {
+            const status = document.getElementById('server-status');
+            
+            try {
+                status.innerHTML = '<div class="info">🔄 Checking server health...</div>';
+                
+                const response = await fetch('/health');
+                const data = await response.json();
+                
+                status.innerHTML = `
+                    <div class="success">✅ Server is running</div>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+            } catch (error) {
+                status.innerHTML = `
+                    <div class="error">❌ Server not responding</div>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+        
+        function showDebugInfo() {
+            const info = document.getElementById('debug-info');
+            
+            const debugData = {
+                currentURL: window.location.href,
+                localStorage: {
+                    token: localStorage.getItem('token') ? 'Present' : 'Missing',
+                    user: localStorage.getItem('user') ? 'Present' : 'Missing'
+                },
+                userAgent: navigator.userAgent,
+                timestamp: new Date().toISOString()
+            };
+            
+            info.innerHTML = `
+                <div class="info">Debug Information:</div>
+                <pre>${JSON.stringify(debugData, null, 2)}</pre>
+            `;
+        }
+        
+        // Auto-check auth on page load
+        window.onload = function() {
+            checkAuth();
+        };
+    </script>
+</body>
+</html>

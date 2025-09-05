@@ -43,8 +43,8 @@ const FreelancerApplication = () => {
       };
 
       await axios.post('/api/users/become-freelancer', applicationData);
-      alert('Application submitted successfully! It will be reviewed by our team.');
-      navigate('/dashboard');
+      alert('Freelancer profile created! You can now upload your CV and Police Clearance.');
+      navigate('/profile');
     } catch (error) {
       setError(error.response?.data?.error || 'Failed to submit application');
     } finally {

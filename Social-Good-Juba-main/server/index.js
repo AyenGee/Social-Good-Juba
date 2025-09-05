@@ -46,7 +46,7 @@ app.use('/api/jobs', rateLimitMiddleware(generalRateLimiter), jobRoutes);
 app.use('/api/ratings', rateLimitMiddleware(generalRateLimiter), ratingRoutes);
 app.use('/api/chat', rateLimitMiddleware(chatRateLimiter), chatRoutes);
 app.use('/api/notifications', rateLimitMiddleware(generalRateLimiter), notificationRoutes);
-app.use('/api/profile', rateLimitMiddleware(generalRateLimiter),profileRoutes);
+app.use('/api/profile', rateLimitMiddleware(generalRateLimiter), profileRoutes);
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', message: 'Juba server is running' });

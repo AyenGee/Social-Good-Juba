@@ -174,51 +174,7 @@ router.post('/auth/google', rateLimitMiddleware(authRateLimiter), async (req, re
     }
 });
 
-// Get current user profile
-router.get('/profile', authenticateToken, async (req, res) => {
-    try {
-        const { data: user, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', req.user.id)
-            .single();
-            
-        if (error) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        
-        // Remove sensitive information
-        const { google_id, ...userData } = user;
-        
-        res.json(userData);
-    } catch (error) {
-        console.error('Profile fetch error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Update user profile
-router.put('/profile', authenticateToken, validateUserRegistration, async (req, res) => {
-    try {
-        const { phone, address } = req.body;
-        
-        const { data: user, error } = await supabase
-            .from('users')
-            .update({ phone, address, profile_completion_status: true })
-            .eq('id', req.user.id)
-            .select()
-            .single();
-            
-        if (error) {
-            return res.status(400).json({ error: 'Profile update failed' });
-        }
-        
-        res.json({ message: 'Profile updated successfully', user });
-    } catch (error) {
-        console.error('Profile update error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
+// Note: Profile routes have been moved to /api/profile for better organization
 
 // Apply to become a freelancer
 router.post('/become-freelancer', authenticateToken, async (req, res) => {
@@ -233,41 +189,83 @@ router.post('/become-freelancer', authenticateToken, async (req, res) => {
             coverage_areas
         } = req.body;
         
-        // Check if user already has a freelancer profile
-        const { data: existingProfile, error: profileError } = await supabase
+        // Normalize incoming types
+        const normalizedProfile = {
+            user_id: req.user.id,
+            bio: bio || null,
+            experience_years: Number.isFinite(experience_years) ? experience_years : (experience_years ? parseInt(experience_years) : null),
+            service_areas: Array.isArray(service_areas) ? service_areas : (service_areas ? service_areas : []),
+            hourly_rate_min: Number.isFinite(hourly_rate_min) ? hourly_rate_min : (hourly_rate_min ? parseFloat(hourly_rate_min) : null),
+            hourly_rate_max: Number.isFinite(hourly_rate_max) ? hourly_rate_max : (hourly_rate_max ? parseFloat(hourly_rate_max) : null),
+            certifications: Array.isArray(certifications) ? certifications : (certifications ? certifications : []),
+            coverage_areas: Array.isArray(coverage_areas) ? coverage_areas : (coverage_areas ? coverage_areas : []),
+            approval_status: 'approved',
+            documents: {},
+            updated_at: new Date().toISOString()
+        };
+
+        // Create or update freelancer profile without relying on ON CONFLICT
+        const { data: existing, error: existingErr } = await supabase
             .from('freelancer_profiles')
             .select('*')
             .eq('user_id', req.user.id)
             .single();
-            
-        if (existingProfile) {
-            return res.status(400).json({ error: 'Freelancer profile already exists' });
+
+        let profile;
+        if (existing && !existingErr) {
+            const { data: updated, error: updateErr } = await supabase
+                .from('freelancer_profiles')
+                .update({
+                    bio: normalizedProfile.bio,
+                    experience_years: normalizedProfile.experience_years,
+                    service_areas: normalizedProfile.service_areas,
+                    hourly_rate_min: normalizedProfile.hourly_rate_min,
+                    hourly_rate_max: normalizedProfile.hourly_rate_max,
+                    certifications: normalizedProfile.certifications,
+                    coverage_areas: normalizedProfile.coverage_areas,
+                    approval_status: normalizedProfile.approval_status,
+                    documents: existing.documents || {},
+                    updated_at: normalizedProfile.updated_at
+                })
+                .eq('user_id', req.user.id)
+                .select()
+                .single();
+            if (updateErr) {
+                console.error('Freelancer profile update error:', updateErr);
+                return res.status(400).json({ error: 'Freelancer profile update failed: ' + updateErr.message });
+            }
+            profile = updated;
+        } else {
+            const { data: inserted, error: insertErr } = await supabase
+                .from('freelancer_profiles')
+                .insert([{ ...normalizedProfile }])
+                .select()
+                .single();
+            if (insertErr) {
+                console.error('Freelancer profile insert error:', insertErr);
+                return res.status(400).json({ error: 'Freelancer profile creation failed: ' + insertErr.message });
+            }
+            profile = inserted;
         }
-        
-        // Create freelancer profile
-        const { data: profile, error: insertError } = await supabase
-            .from('freelancer_profiles')
-            .insert([
-                {
-                    user_id: req.user.id,
-                    bio,
-                    experience_years,
-                    service_areas,
-                    hourly_rate_min,
-                    hourly_rate_max,
-                    certifications,
-                    coverage_areas,
-                    approval_status: 'approved' // Auto-approve all users
-                }
-            ])
+
+        // Ensure the user role is freelancer so Profile shows freelancer-specific UI
+        const { data: updatedUser, error: userUpdateError } = await supabase
+            .from('users')
+            .update({ role: 'freelancer', updated_at: new Date().toISOString() })
+            .eq('id', req.user.id)
             .select()
             .single();
-            
-        if (insertError) {
-            return res.status(400).json({ error: 'Freelancer profile creation failed' });
+
+        if (userUpdateError) {
+            console.error('User role update error:', userUpdateError);
+            // Not fatal for profile creation; continue
         }
-        
-        res.json({ message: 'Freelancer profile created successfully', profile });
+
+        res.json({ 
+            message: 'Freelancer profile ready', 
+            profile, 
+            user: updatedUser || null 
+        });
     } catch (error) {
         console.error('Freelancer application error:', error);
         res.status(500).json({ error: 'Internal server error' });
