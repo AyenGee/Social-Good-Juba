@@ -24,7 +24,7 @@ const Learn = () => {
           type: 'video',
           description: 'Introduction to Juba Platform and how it works',
           content: 'Welcome to Juba Platform! This video will show you how our platform connects clients with skilled freelancers in South Sudan.',
-          videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' // Replace with actual video
+          videoUrl: '/juba-intro-video.mp4'
         },
         {
           id: 'creating-account',
@@ -71,7 +71,7 @@ const Learn = () => {
           type: 'video',
           description: 'Learn how to create effective job postings',
           content: 'Creating a good job posting helps you find the right freelancer quickly.',
-          videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+          videoUrl: '/juba-intro-video.mp4'
         },
         {
           id: 'choosing-freelancers',
@@ -133,7 +133,7 @@ const Learn = () => {
           type: 'video',
           description: 'How to find relevant jobs and write winning proposals',
           content: 'Learn how to search for jobs and write proposals that get you hired.',
-          videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+          videoUrl: '/juba-intro-video.mp4'
         },
         {
           id: 'pricing-services',
@@ -195,7 +195,7 @@ const Learn = () => {
           type: 'video',
           description: 'How to manage multiple projects and deadlines',
           content: 'Effective time management helps you take on more work and earn more.',
-          videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+          videoUrl: '/juba-intro-video.mp4'
         }
       ]
     },
@@ -212,7 +212,7 @@ const Learn = () => {
           type: 'video',
           description: 'Introduction to digital marketing for freelancers',
           content: 'Learn the basics of promoting your services online.',
-          videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+          videoUrl: '/juba-intro-video.mp4'
         },
         {
           id: 'social-media',
@@ -274,7 +274,7 @@ const Learn = () => {
           type: 'video',
           description: 'Advanced pricing techniques for freelancers',
           content: 'Learn different pricing models and when to use them.',
-          videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+          videoUrl: '/juba-intro-video.mp4'
         },
         {
           id: 'tax-basics',
@@ -418,13 +418,15 @@ const Learn = () => {
                   
                   {lesson.type === 'video' && lesson.videoUrl && (
                     <div className="video-container">
-                      <iframe
-                        src={lesson.videoUrl}
-                        title={lesson.title}
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      ></iframe>
+                      <video
+                        controls
+                        width="100%"
+                        height="400"
+                        poster="/video-poster.jpg"
+                      >
+                        <source src={lesson.videoUrl} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
                     </div>
                   )}
                   
