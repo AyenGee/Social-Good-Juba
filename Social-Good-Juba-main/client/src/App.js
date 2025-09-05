@@ -14,6 +14,7 @@ import JobDetails from './pages/JobDetails';
 import Plans from './pages/Plans';
 import Notifications from './pages/Notifications';
 import Profile from './pages/Profile';
+import FreelancerApplication from './pages/FreelancerApplication';
 // Import context
 import { AuthProvider } from './context/AuthContext';
 import { ChatProvider } from './context/ChatContext';
@@ -47,6 +48,7 @@ function App() {
                     <Route path="/plans" element={<Plans />} />
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/profile" element={<Profile />} />
+                    <Route path="/become-freelancer" element={<FreelancerApplication />} />
                   </Routes>
                 </main>
               </div>
