@@ -13,7 +13,7 @@ import JobSearch from './pages/JobSearch';
 import JobDetails from './pages/JobDetails';
 import Plans from './pages/Plans';
 import Notifications from './pages/Notifications';
-
+import Profile from './pages/Profile';
 // Import context
 import { AuthProvider } from './context/AuthContext';
 import { ChatProvider } from './context/ChatContext';
@@ -46,6 +46,7 @@ function App() {
                     <Route path="/job/:id" element={<JobDetails />} />
                     <Route path="/plans" element={<Plans />} />
                     <Route path="/notifications" element={<Notifications />} />
+                    <Route path="/profile" element={<Profile />} />
                   </Routes>
                 </main>
               </div>
