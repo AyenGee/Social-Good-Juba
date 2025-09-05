@@ -7,7 +7,9 @@ const AdminDashboard = () => {
   const { currentUser } = useAuth();
   const [stats, setStats] = useState({});
   const [users, setUsers] = useState([]);
-        const [freelancerProfiles, setFreelancerProfiles] = useState([]);
+  const [freelancerProfiles, setFreelancerProfiles] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [reports, setReports] = useState([]);
@@ -20,6 +22,11 @@ const AdminDashboard = () => {
     address: ''
   });
   const [creatingAdmin, setCreatingAdmin] = useState(false);
+
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showJobModal, setShowJobModal] = useState(false);
+  const [selectedJob, setSelectedJob] = useState(null);
 
   useEffect(() => {
     if (currentUser?.admin_status) {
@@ -48,7 +55,7 @@ const AdminDashboard = () => {
       setReports(reportsResponse.value?.data?.reports || []);
       setConversations(conversationsResponse.value?.data?.conversations || []);
       
-      // Calculate admin stats
+      // Calculate comprehensive admin stats
       const adminStats = {
         totalUsers: usersResponse.value?.data?.length || 0,
         totalFreelancers: usersResponse.value?.data?.filter(u => (u.freelancer_profiles && u.freelancer_profiles.length > 0)).length || 0,
@@ -63,6 +70,10 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error fetching admin data:', error);
       console.error('Error details:', error.response?.data);
+      setNotification({
+        type: 'error',
+        message: 'Failed to load admin data'
+      });
     } finally {
       setLoading(false);
     }
@@ -137,6 +148,79 @@ const AdminDashboard = () => {
     });
   };
 
+  const handleUserAction = async (userId, action) => {
+    try {
+      if (action === 'delete') {
+        if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+          await axios.delete(`/api/users/admin/users/${userId}`);
+          setNotification({
+            type: 'success',
+            message: 'User deleted successfully'
+          });
+          fetchAdminData();
+        }
+      } else if (action === 'toggle-admin') {
+        const user = users.find(u => u.id === userId);
+        await axios.put(`/api/users/admin/users/${userId}`, {
+          admin_status: !user.admin_status
+        });
+        setNotification({
+          type: 'success',
+          message: `User ${!user.admin_status ? 'promoted to' : 'removed from'} admin`
+        });
+        fetchAdminData();
+      }
+    } catch (error) {
+      console.error('Error performing user action:', error);
+      setNotification({
+        type: 'error',
+        message: error.response?.data?.error || 'Action failed'
+      });
+    }
+  };
+
+  const handleJobAction = async (jobId, action) => {
+    try {
+      if (action === 'delete') {
+        if (window.confirm('Are you sure you want to delete this job? This action cannot be undone.')) {
+          await axios.delete(`/api/jobs/admin/jobs/${jobId}`);
+          setNotification({
+            type: 'success',
+            message: 'Job deleted successfully'
+          });
+          fetchAdminData();
+        }
+      } else if (action === 'update-status') {
+        const job = jobs.find(j => j.id === jobId);
+        const newStatus = job.status === 'posted' ? 'in_progress' : 'posted';
+        await axios.put(`/api/jobs/admin/jobs/${jobId}`, {
+          status: newStatus
+        });
+        setNotification({
+          type: 'success',
+          message: `Job status updated to ${newStatus}`
+        });
+        fetchAdminData();
+      }
+    } catch (error) {
+      console.error('Error performing job action:', error);
+      setNotification({
+        type: 'error',
+        message: error.response?.data?.error || 'Action failed'
+      });
+    }
+  };
+
+  const viewUserDetails = (user) => {
+    setSelectedUser(user);
+    setShowUserModal(true);
+  };
+
+  const viewJobDetails = (job) => {
+    setSelectedJob(job);
+    setShowJobModal(true);
+  };
+
   if (!currentUser?.admin_status) {
     return (
       <div className="admin-access-denied">
@@ -167,6 +251,14 @@ const AdminDashboard = () => {
         </div>
       </div>
 
+      {/* Notification */}
+      {notification && (
+        <div className={`notification ${notification.type}`}>
+          <span>{notification.message}</span>
+          <button onClick={() => setNotification(null)}>×</button>
+        </div>
+      )}
+
       {/* Admin Stats */}
       <div className="admin-stats">
         <div className="stat-card">
@@ -190,7 +282,34 @@ const AdminDashboard = () => {
             <div className="stat-label">Clients</div>
           </div>
         </div>
-
+        <div className="stat-card">
+          <div className="stat-icon">📋</div>
+          <div className="stat-content">
+            <div className="stat-number">{stats.totalJobs}</div>
+            <div className="stat-label">Total Jobs</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">⚡</div>
+          <div className="stat-content">
+            <div className="stat-number">{stats.activeJobs}</div>
+            <div className="stat-label">Active Jobs</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">✅</div>
+          <div className="stat-content">
+            <div className="stat-number">{stats.completedJobs}</div>
+            <div className="stat-label">Completed</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">📝</div>
+          <div className="stat-content">
+            <div className="stat-number">{stats.totalApplications}</div>
+            <div className="stat-label">Applications</div>
+          </div>
+        </div>
       </div>
 
       {/* Admin Tabs */}
@@ -200,6 +319,12 @@ const AdminDashboard = () => {
           onClick={() => setActiveTab('overview')}
         >
           Overview
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'users' ? 'active' : ''}`}
+          onClick={() => setActiveTab('users')}
+        >
+          Users ({stats.totalUsers})
         </button>
         <button
           className={`tab-button ${activeTab === 'freelancers' ? 'active' : ''}`}
@@ -237,6 +362,13 @@ const AdminDashboard = () => {
                 <div className="quick-actions">
                   <button 
                     className="quick-action"
+                    onClick={() => setActiveTab('users')}
+                  >
+                    <span className="action-icon">👥</span>
+                    <span>Manage Users</span>
+                  </button>
+                  <button 
+                    className="quick-action"
                     onClick={() => setActiveTab('freelancers')}
                   >
                     <span className="action-icon">🔧</span>
@@ -244,32 +376,60 @@ const AdminDashboard = () => {
                   </button>
                   <button 
                     className="quick-action"
-                    onClick={() => setActiveTab('users')}
+                    onClick={() => setActiveTab('jobs')}
                   >
-                    <span className="action-icon">👥</span>
-                    <span>Manage Users</span>
+                    <span className="action-icon">📋</span>
+                    <span>Manage Jobs</span>
                   </button>
-                                     <button 
-                     className="quick-action"
-                     onClick={() => setShowCreateAdminModal(true)}
-                   >
-                     <span className="action-icon">👑</span>
-                     <span>Create Admin</span>
-                   </button>
-
+                  <button 
+                    className="quick-action"
+                    onClick={() => setShowCreateAdminModal(true)}
+                  >
+                    <span className="action-icon">👑</span>
+                    <span>Create Admin</span>
+                  </button>
                 </div>
               </div>
               
               <div className="overview-card">
-                <h3>Freelancer Summary</h3>
+                <h3>Platform Summary</h3>
                 <div className="application-summary">
                   <div className="summary-item">
-                    <span className="summary-label">Total Freelancers:</span>
-                    <span className="summary-value approved">{stats.totalFreelancers}</span>
+                    <span className="summary-label">Total Users:</span>
+                    <span className="summary-value approved">{stats.totalUsers}</span>
                   </div>
                   <div className="summary-item">
-                    <span className="summary-label">Active Users:</span>
-                    <span className="summary-value pending">{stats.totalUsers}</span>
+                    <span className="summary-label">Freelancers:</span>
+                    <span className="summary-value pending">{stats.totalFreelancers}</span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">Active Jobs:</span>
+                    <span className="summary-value active">{stats.activeJobs}</span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">Total Applications:</span>
+                    <span className="summary-value total">{stats.totalApplications}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="overview-card">
+                <h3>Recent Activity</h3>
+                <div className="recent-activity">
+                  <div className="activity-item">
+                    <span className="activity-icon">👤</span>
+                    <span className="activity-text">Latest user joined</span>
+                    <span className="activity-time">2 hours ago</span>
+                  </div>
+                  <div className="activity-item">
+                    <span className="activity-icon">📋</span>
+                    <span className="activity-text">New job posted</span>
+                    <span className="activity-time">4 hours ago</span>
+                  </div>
+                  <div className="activity-item">
+                    <span className="activity-icon">✅</span>
+                    <span className="activity-text">Job completed</span>
+                    <span className="activity-time">1 day ago</span>
                   </div>
                 </div>
               </div>
@@ -493,8 +653,6 @@ const AdminDashboard = () => {
         )}
       </div>
 
-
-
       {/* Create Admin Modal */}
       {showCreateAdminModal && (
         <div className="modal-overlay">
@@ -567,6 +725,162 @@ const AdminDashboard = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Details Modal */}
+      {showUserModal && selectedUser && (
+        <div className="modal-overlay">
+          <div className="modal user-details-modal">
+            <div className="modal-header">
+              <h3>User Details</h3>
+              <button 
+                className="modal-close"
+                onClick={() => setShowUserModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="user-details">
+                <div className="detail-section">
+                  <h4>Basic Information</h4>
+                  <div className="detail-item">
+                    <span className="detail-label">Username:</span>
+                    <span className="detail-value">{selectedUser.username || 'N/A'}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Email:</span>
+                    <span className="detail-value">{selectedUser.email}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Role:</span>
+                    <span className="detail-value">
+                      {selectedUser.admin_status ? 'Admin' : 
+                       selectedUser.freelancer_profile ? 'Freelancer' : 'Client'}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Joined:</span>
+                    <span className="detail-value">{new Date(selectedUser.created_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+
+                {selectedUser.freelancer_profile && (
+                  <div className="detail-section">
+                    <h4>Freelancer Profile</h4>
+                    <div className="detail-item">
+                      <span className="detail-label">Bio:</span>
+                      <span className="detail-value">{selectedUser.freelancer_profile.bio || 'Not provided'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Experience:</span>
+                      <span className="detail-value">{selectedUser.freelancer_profile.experience_years} years</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Hourly Rate:</span>
+                      <span className="detail-value">
+                        R{selectedUser.freelancer_profile.hourly_rate_min} - R{selectedUser.freelancer_profile.hourly_rate_max}/hr
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button 
+                className="btn btn-outline"
+                onClick={() => setShowUserModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Job Details Modal */}
+      {showJobModal && selectedJob && (
+        <div className="modal-overlay">
+          <div className="modal job-details-modal">
+            <div className="modal-header">
+              <h3>Job Details</h3>
+              <button 
+                className="modal-close"
+                onClick={() => setShowJobModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="job-details">
+                <div className="detail-section">
+                  <h4>Job Information</h4>
+                  <div className="detail-item">
+                    <span className="detail-label">Title:</span>
+                    <span className="detail-value">{selectedJob.title}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Description:</span>
+                    <span className="detail-value">{selectedJob.description}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Location:</span>
+                    <span className="detail-value">{selectedJob.location}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Status:</span>
+                    <span className="detail-value">
+                      <span className={`status-badge status-${selectedJob.status}`}>
+                        {selectedJob.status}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Client:</span>
+                    <span className="detail-value">{selectedJob.client?.username || selectedJob.client?.email}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Created:</span>
+                    <span className="detail-value">{new Date(selectedJob.created_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+
+                {selectedJob.applications && selectedJob.applications.length > 0 && (
+                  <div className="detail-section">
+                    <h4>Applications ({selectedJob.applications.length})</h4>
+                    <div className="applications-list">
+                      {selectedJob.applications.map(app => (
+                        <div key={app.id} className="application-item">
+                          <div className="app-freelancer">
+                            {app.freelancer?.username || app.freelancer?.email}
+                          </div>
+                          <div className="app-rate">R{app.proposed_rate}</div>
+                          <div className="app-status">
+                            <span className={`status-badge status-${app.status}`}>
+                              {app.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button 
+                className="btn btn-outline"
+                onClick={() => setShowJobModal(false)}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

@@ -6,6 +6,30 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+/* Rating Display Styles */
+.client-rating-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.client-rating-item .info-label {
+  min-width: 120px;
+}
+
+.freelancer-rating {
+  margin-top: 8px;
+}
+
+.application-rating,
+.accepted-freelancer-rating {
+  font-size: 14px;
+}
+
+.client-rating {
+  font-size: 14px;
+}
+
 /* Loading States */
 .job-details-loading,
 .job-details-error,

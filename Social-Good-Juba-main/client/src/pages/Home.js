@@ -25,10 +25,13 @@ const Home = () => {
                 <Link to="/login" className="btn btn-primary btn-xl">
                   Get Started Today
                 </Link>
-                <Link to="/jobs" className="btn btn-outline btn-xl">
+                <Link to="/learn" className="btn btn-outline btn-xl">
+                  Learn How It Works
+                </Link>
+                <Link to="/jobs" className="btn btn-secondary btn-xl">
                   Browse Jobs
                 </Link>
-                <Link to="/plans" className="btn btn-secondary btn-xl">
+                <Link to="/plans" className="btn btn-tertiary btn-xl">
                   View Plans
                 </Link>
               </>
@@ -37,10 +40,13 @@ const Home = () => {
                 <Link to="/dashboard" className="btn btn-primary btn-xl">
                   Go to Dashboard
                 </Link>
-                <Link to="/post-job" className="btn btn-outline btn-xl">
+                <Link to="/learn" className="btn btn-outline btn-xl">
+                  Learn & Grow
+                </Link>
+                <Link to="/post-job" className="btn btn-secondary btn-xl">
                   Post a Job
                 </Link>
-                <Link to="/plans" className="btn btn-secondary btn-xl">
+                <Link to="/plans" className="btn btn-tertiary btn-xl">
                   View Plans
                 </Link>
               </>

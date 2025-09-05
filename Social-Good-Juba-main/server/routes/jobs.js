@@ -1016,27 +1016,40 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         
+        console.log('=== JOB DELETION DEBUG ===');
+        console.log('Job ID:', id);
+        console.log('User ID:', req.user.id);
+        console.log('User email:', req.user.email);
+        
         // First check if the job exists and belongs to the authenticated user
         const { data: existingJob, error: fetchError } = await supabase
             .from('jobs')
-            .select('client_id, status')
+            .select('client_id, status, title')
             .eq('id', id)
             .single();
             
+        console.log('Existing job:', existingJob);
+        console.log('Fetch error:', fetchError);
+            
         if (fetchError || !existingJob) {
+            console.log('Job not found or fetch error');
             return res.status(404).json({ error: 'Job not found' });
         }
         
         if (existingJob.client_id !== req.user.id) {
+            console.log('Job does not belong to user. Job client_id:', existingJob.client_id, 'User ID:', req.user.id);
             return res.status(403).json({ error: 'You can only delete your own jobs' });
         }
         
-        // Check if job can be deleted (not in progress or completed)
-        if (existingJob.status === 'in_progress' || existingJob.status === 'completed') {
+        // Check if job can be deleted (only prevent deletion of completed jobs)
+        if (existingJob.status === 'completed') {
+            console.log('Job cannot be deleted due to status:', existingJob.status);
             return res.status(400).json({ 
-                error: 'Cannot delete job that is in progress or completed' 
+                error: 'Cannot delete completed jobs. Completed jobs are kept for record purposes.' 
             });
         }
+        
+        console.log('Job can be deleted, proceeding with deletion...');
         
         // Delete the job
         const { error: deleteError } = await supabase
@@ -1049,6 +1062,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'Failed to delete job' });
         }
         
+        console.log('Job deleted successfully');
         res.json({ message: 'Job deleted successfully' });
     } catch (error) {
         console.error('Job deletion error:', error);
