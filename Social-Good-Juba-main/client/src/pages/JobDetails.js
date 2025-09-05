@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import ChatButton from '../components/ChatButton';
 import ReportButton from '../components/ReportButton';
+import RatingDisplay from '../components/RatingDisplay';
 import './JobDetails.css';
 
 const JobDetails = () => {
