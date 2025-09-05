@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       // Fetch user profile
-      axios.get('/api/users/profile')
+      axios.get('/api/profile')
         .then(response => {
           setCurrentUser(response.data);
         })

@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import './Profile.css';
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { currentUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
@@ -39,16 +39,18 @@ const Profile = () => {
   });
 
   useEffect(() => {
-    if (user) {
-      fetchUserProfile();
+    if (!currentUser) {
+      setLoading(false);
+      return;
     }
-  }, [user]);
+    fetchUserProfile();
+  }, [currentUser]);
 
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
       
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('juba_token');
       const response = await fetch('/api/profile', {
         method: 'GET',
         headers: {
@@ -188,7 +190,7 @@ const Profile = () => {
     setSaving(true);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('juba_token');
       const response = await fetch('/api/profile', {
         method: 'PUT',
         headers: {

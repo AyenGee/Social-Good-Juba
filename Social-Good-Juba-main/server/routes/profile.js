@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { supabase } = require('../db');
+const supabase = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
@@ -25,6 +25,7 @@ const upload = multer({
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
+    console.log('Fetching profile for user ID:', userId);
 
     // Get user profile
     const { data: userData, error: userError } = await supabase
@@ -38,10 +39,13 @@ router.get('/', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: userError.message });
     }
 
+    console.log('User data fetched:', userData ? 'Success' : 'Failed');
+
     let responseData = { user: userData };
 
     // If user is a freelancer, get freelancer profile
     if (userData.role === 'freelancer') {
+      console.log('User is freelancer, fetching freelancer profile...');
       const { data: freelancerData, error: freelancerError } = await supabase
         .from('freelancer_profiles')
         .select('*')
@@ -53,9 +57,11 @@ router.get('/', authenticateToken, async (req, res) => {
         return res.status(400).json({ error: freelancerError.message });
       }
 
+      console.log('Freelancer profile fetched:', freelancerData ? 'Success' : 'No profile found');
       responseData.freelancer_profile = freelancerData;
     }
 
+    console.log('Profile fetch successful');
     res.json(responseData);
   } catch (error) {
     console.error('Error fetching profile:', error);
@@ -67,6 +73,9 @@ router.get('/', authenticateToken, async (req, res) => {
 router.put('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
+    console.log('Updating profile for user ID:', userId);
+    console.log('Request body:', req.body);
+    
     const {
       first_name,
       last_name,

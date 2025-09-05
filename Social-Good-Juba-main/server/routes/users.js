@@ -174,51 +174,7 @@ router.post('/auth/google', rateLimitMiddleware(authRateLimiter), async (req, re
     }
 });
 
-// Get current user profile
-router.get('/profile', authenticateToken, async (req, res) => {
-    try {
-        const { data: user, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', req.user.id)
-            .single();
-            
-        if (error) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        
-        // Remove sensitive information
-        const { google_id, ...userData } = user;
-        
-        res.json(userData);
-    } catch (error) {
-        console.error('Profile fetch error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Update user profile
-router.put('/profile', authenticateToken, validateUserRegistration, async (req, res) => {
-    try {
-        const { phone, address } = req.body;
-        
-        const { data: user, error } = await supabase
-            .from('users')
-            .update({ phone, address, profile_completion_status: true })
-            .eq('id', req.user.id)
-            .select()
-            .single();
-            
-        if (error) {
-            return res.status(400).json({ error: 'Profile update failed' });
-        }
-        
-        res.json({ message: 'Profile updated successfully', user });
-    } catch (error) {
-        console.error('Profile update error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
+// Note: Profile routes have been moved to /api/profile for better organization
 
 // Apply to become a freelancer
 router.post('/become-freelancer', authenticateToken, async (req, res) => {
