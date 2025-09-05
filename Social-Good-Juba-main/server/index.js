@@ -12,6 +12,7 @@ const ratingRoutes = require('./routes/ratings');
 const chatRoutes = require('./routes/chat');
 const notificationRoutes = require('./routes/notifications');
 const profileRoutes = require('./routes/profile');
+const reportRoutes = require('./routes/reports');
 // Import middleware
 const { authenticateToken } = require('./middleware/auth');
 const { rateLimitMiddleware, generalRateLimiter, chatRateLimiter } = require('./middleware/rateLimit');
@@ -47,6 +48,7 @@ app.use('/api/ratings', rateLimitMiddleware(generalRateLimiter), ratingRoutes);
 app.use('/api/chat', rateLimitMiddleware(chatRateLimiter), chatRoutes);
 app.use('/api/notifications', rateLimitMiddleware(generalRateLimiter), notificationRoutes);
 app.use('/api/profile', rateLimitMiddleware(generalRateLimiter), profileRoutes);
+app.use('/api/reports', rateLimitMiddleware(generalRateLimiter), reportRoutes);
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', message: 'Juba server is running' });
@@ -104,6 +106,12 @@ io.on('connection', (socket) => {
     
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
+    });
+
+    // Relay chat messages in real-time
+    socket.on('send-message', (data) => {
+        // Broadcast to everyone else in the conversation room
+        socket.to(data.conversationId).emit('new-message', data.message);
     });
 });
 

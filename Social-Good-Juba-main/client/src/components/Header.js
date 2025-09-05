@@ -54,7 +54,7 @@ const Header = () => {
         <Link to="/" className="navbar-brand" onClick={closeMenu}>
           Juba Platform
         </Link>
-        <Link to="/profile" className="nav-link">Profile</Link>
+        {currentUser && <Link to="/profile" className="nav-link">Profile</Link>}
         <div className="navbar-actions">
           {currentUser && (
             <>

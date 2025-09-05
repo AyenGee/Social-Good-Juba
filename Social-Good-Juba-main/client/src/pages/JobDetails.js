@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import ChatButton from '../components/ChatButton';
+import ReportButton from '../components/ReportButton';
 import './JobDetails.css';
 
 const JobDetails = () => {
@@ -18,19 +19,30 @@ const JobDetails = () => {
   const { currentUser } = useAuth();
 
   useEffect(() => {
-    fetchJobDetails();
+    console.log('JobDetails component mounted with ID:', id);
+    if (id) {
+      fetchJobDetails();
+    } else {
+      console.error('No job ID provided');
+      setError('No job ID provided');
+      setLoading(false);
+    }
   }, [id]);
 
   const fetchJobDetails = async () => {
     try {
+      console.log('Fetching job details for ID:', id);
       const [jobResponse, applicationsResponse] = await Promise.all([
         axios.get(`/api/jobs/${id}`),
         axios.get(`/api/jobs/${id}/applications`)
       ]);
+      console.log('Job response:', jobResponse.data);
+      console.log('Applications response:', applicationsResponse.data);
       setJob(jobResponse.data);
       setApplications(applicationsResponse.data);
     } catch (error) {
-      setError('Failed to fetch job details');
+      console.error('Job details fetch error:', error);
+      setError('Failed to fetch job details: ' + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }
@@ -115,6 +127,8 @@ const JobDetails = () => {
   const hasApplied = job.applications?.some(app => app.freelancer_id === currentUser?.id);
   const isJobOwner = job.client_id === currentUser?.id;
   const statusConfig = getStatusConfig(job.status);
+
+  // Helper function removed - using direct access to profile data
 
   return (
     <div className="job-details-simple">
@@ -230,6 +244,57 @@ const JobDetails = () => {
                       <p>{application.message}</p>
                     </div>
                   )}
+                  {/* Freelancer profile extras for job owner */}
+                  {isJobOwner && (
+                    <div className="freelancer-extra">
+                      {/* Debug info - remove this later */}
+                      {console.log('Application data:', application)}
+                      {console.log('Freelancer profile:', application.freelancer?.profile)}
+                      <div className="extra-row"><strong>Experience:</strong> {application.freelancer?.profile?.experience_years ?? 'N/A'} years</div>
+                      <div className="extra-row"><strong>Services:</strong> {(application.freelancer?.profile?.service_areas || []).join(', ') || 'N/A'}</div>
+                      <div className="extra-row"><strong>Languages:</strong> {(application.freelancer?.profile?.languages_spoken || []).join(', ') || 'N/A'}</div>
+                      {application.freelancer?.profile?.bio && (
+                        <div className="extra-row"><strong>Bio:</strong> {application.freelancer.profile.bio}</div>
+                      )}
+                      {application.freelancer?.profile?.transportation_available && (
+                        <div className="extra-row"><strong>Transportation:</strong> ✅ Available</div>
+                      )}
+                      {application.freelancer?.profile?.insurance_coverage && (
+                        <div className="extra-row"><strong>Insurance:</strong> ✅ Covered</div>
+                      )}
+                      {application.freelancer?.profile?.certifications && application.freelancer.profile.certifications.length > 0 && (
+                        <div className="extra-row"><strong>Certifications:</strong> {application.freelancer.profile.certifications.join(', ')}</div>
+                      )}
+                      {application.freelancer?.profile?.documents?.cv && (
+                        <div className="extra-row">
+                          <strong>CV:</strong> <a href={application.freelancer.profile.documents.cv.url} target="_blank" rel="noopener noreferrer">View CV</a>
+                        </div>
+                      )}
+                      {typeof application.freelancer?.ratingAvg === 'number' && (
+                        <div className="extra-row"><strong>Rating:</strong> {application.freelancer.ratingAvg} ⭐ ({application.freelancer.ratingCount || 0})</div>
+                      )}
+                      {application.freelancer?.verification_status && (
+                        <div className="extra-row"><strong>Status:</strong> ✅ Verified</div>
+                      )}
+                      <div className="extra-row actions-row">
+                        <ChatButton
+                          clientId={job.client_id}
+                          freelancerId={application.freelancer?.id}
+                          jobId={job.id}
+                          jobTitle={job.title}
+                          variant="secondary"
+                        >
+                          💬 Message Applicant
+                        </ChatButton>
+                        <ReportButton
+                          userId={application.freelancer_id}
+                          jobId={id}
+                          userType="freelancer"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <div className="application-status">
                     <span className={`status-badge ${application.status === 'accepted' ? 'status-accepted' : application.status === 'rejected' ? 'status-rejected' : 'status-pending'}`}>
                       {application.status === 'accepted' ? '✅ Accepted' : 

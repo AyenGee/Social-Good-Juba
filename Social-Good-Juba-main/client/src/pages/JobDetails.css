@@ -734,6 +734,16 @@
   }
 }
 
+/* Actions row styling */
+.actions-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 12px 0;
+  border-bottom: none;
+}
+
 @media (max-width: 480px) {
   .job-card {
     padding: 20px 15px;

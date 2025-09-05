@@ -1,0 +1,73 @@
+.report-btn {
+    background: #ff4757;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.report-btn:hover {
+    background: #ff3742;
+    transform: translateY(-1px);
+}
+
+.report-modal {
+    max-width: 500px;
+    width: 90%;
+}
+
+.report-modal .form-group {
+    margin-bottom: 16px;
+}
+
+.report-modal .form-label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: #333;
+}
+
+.report-modal .form-select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    background: white;
+}
+
+.report-modal .form-textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 100px;
+}
+
+.report-modal .form-textarea:focus,
+.report-modal .form-select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .report-modal {
+        width: 95%;
+        margin: 20px auto;
+    }
+    
+    .report-btn {
+        padding: 8px 12px;
+        font-size: 11px;
+    }
+}

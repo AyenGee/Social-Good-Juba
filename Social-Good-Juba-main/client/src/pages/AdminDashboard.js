@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import './AdminDashboard.css';
 
 const AdminDashboard = () => {
   const { currentUser } = useAuth();
@@ -9,6 +10,8 @@ const AdminDashboard = () => {
         const [freelancerProfiles, setFreelancerProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [reports, setReports] = useState([]);
+  const [conversations, setConversations] = useState([]);
 
   const [showCreateAdminModal, setShowCreateAdminModal] = useState(false);
   const [createAdminForm, setCreateAdminForm] = useState({
@@ -28,24 +31,31 @@ const AdminDashboard = () => {
     try {
       console.log('Fetching admin data...');
       
-      // Fetch users and freelancer profiles
-      const [usersResponse, profilesResponse] = await Promise.all([
+      // Fetch users, freelancer profiles, reports, and conversations
+      const [usersResponse, profilesResponse, reportsResponse, conversationsResponse] = await Promise.allSettled([
         axios.get('/api/users/admin/users'),
-        axios.get('/api/users/freelancer-profiles')
+        axios.get('/api/users/freelancer-profiles'),
+        axios.get('/api/reports/admin/all').catch(() => ({ data: { reports: [] } })),
+        axios.get('/api/reports/admin/chats').catch(() => ({ data: { conversations: [] } }))
       ]);
 
-      console.log('Users response:', usersResponse.data);
-      console.log('Profiles response:', profilesResponse.data);
-      console.log('Profiles array:', profilesResponse.data.profiles);
+      console.log('Users response:', usersResponse.value?.data);
+      console.log('Profiles response:', profilesResponse.value?.data);
+      console.log('Profiles array:', profilesResponse.value?.data?.profiles);
 
-      setUsers(usersResponse.data || []);
-      setFreelancerProfiles(profilesResponse.data.profiles || []);
+      setUsers(usersResponse.value?.data || []);
+      setFreelancerProfiles(profilesResponse.value?.data?.profiles || []);
+      setReports(reportsResponse.value?.data?.reports || []);
+      setConversations(conversationsResponse.value?.data?.conversations || []);
       
       // Calculate admin stats
       const adminStats = {
-        totalUsers: usersResponse.data?.length || 0,
-        totalFreelancers: usersResponse.data?.filter(u => u.freelancer_profile).length || 0,
-        totalClients: usersResponse.data?.filter(u => !u.freelancer_profile).length || 0
+        totalUsers: usersResponse.value?.data?.length || 0,
+        totalFreelancers: usersResponse.value?.data?.filter(u => (u.freelancer_profiles && u.freelancer_profiles.length > 0)).length || 0,
+        totalClients: usersResponse.value?.data?.filter(u => !(u.freelancer_profiles && u.freelancer_profiles.length > 0)).length || 0,
+        totalReports: reportsResponse.value?.data?.reports?.length || 0,
+        pendingReports: reportsResponse.value?.data?.reports?.filter(r => r.status === 'pending').length || 0,
+        totalConversations: conversationsResponse.value?.data?.conversations?.length || 0
       };
       
       console.log('Calculated stats:', adminStats);
@@ -55,6 +65,44 @@ const AdminDashboard = () => {
       console.error('Error details:', error.response?.data);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleVerifyFreelancer = async (userId, currentVerified) => {
+    try {
+      await axios.post(`/api/users/admin/freelancers/${userId}/verify`, { verified: !currentVerified });
+      fetchAdminData();
+    } catch (e) {
+      alert(e.response?.data?.error || 'Failed to update verification');
+    }
+  };
+
+  const deleteUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+    try {
+      await axios.delete(`/api/users/admin/users/${userId}`);
+      fetchAdminData();
+    } catch (e) {
+      alert(e.response?.data?.error || 'Failed to delete user');
+    }
+  };
+
+  const updateReportStatus = async (reportId, status, adminNotes = '') => {
+    try {
+      await axios.put(`/api/reports/admin/${reportId}/status`, { status, admin_notes: adminNotes });
+      fetchAdminData();
+    } catch (e) {
+      alert(e.response?.data?.error || 'Failed to update report status');
+    }
+  };
+
+  const deleteJob = async (jobId) => {
+    if (!window.confirm('Are you sure you want to delete this job? This action cannot be undone.')) return;
+    try {
+      await axios.delete(`/api/reports/admin/jobs/${jobId}`);
+      fetchAdminData();
+    } catch (e) {
+      alert(e.response?.data?.error || 'Failed to delete job');
     }
   };
 
@@ -164,6 +212,18 @@ const AdminDashboard = () => {
           onClick={() => setActiveTab('users')}
         >
           User Management
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'reports' ? 'active' : ''}`}
+          onClick={() => setActiveTab('reports')}
+        >
+          Reports ({stats.pendingReports || 0})
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'chats' ? 'active' : ''}`}
+          onClick={() => setActiveTab('chats')}
+        >
+          All Chats ({stats.totalConversations || 0})
         </button>
       </div>
 
@@ -299,17 +359,22 @@ const AdminDashboard = () => {
                       <td>{user.username || 'N/A'}</td>
                       <td>{user.email}</td>
                                                      <td>
-                                 <span className={`role-badge ${user.admin_status ? 'role-admin' : (user.freelancer_profile?.approval_status === 'approved' ? 'role-freelancer' : 'role-client')}`}>
-                                   {user.admin_status ? 'Admin' : (user.freelancer_profile?.approval_status === 'approved' ? 'Freelancer' : 'Client')}
-                                 </span>
-                               </td>
-                               <td>
-                                 {user.admin_status ? 'Admin' : (user.freelancer_profile?.approval_status ? user.freelancer_profile.approval_status : 'Active')}
-                               </td>
+                                <span className={`role-badge ${user.admin_status ? 'role-admin' : ((user.freelancer_profiles && user.freelancer_profiles[0]?.approval_status === 'approved') ? 'role-freelancer' : 'role-client')}`}>
+                                  {user.admin_status ? 'Admin' : ((user.freelancer_profiles && user.freelancer_profiles[0]?.approval_status === 'approved') ? 'Freelancer' : 'Client')}
+                                </span>
+                              </td>
+                              <td>
+                                {user.admin_status ? 'Admin' : ((user.freelancer_profiles && user.freelancer_profiles[0]?.approval_status) ? user.freelancer_profiles[0].approval_status : 'Active')}
+                              </td>
                       <td>{new Date(user.created_at).toLocaleDateString()}</td>
                       <td>
-                        <button className="btn btn-sm btn-outline">
-                          View Details
+                        {(user.freelancer_profiles && user.freelancer_profiles[0]) && (
+                          <button className="btn btn-sm btn-success" onClick={() => toggleVerifyFreelancer(user.id, !!user.verification_status)}>
+                            {user.verification_status ? 'Unverify' : 'Verify'}
+                          </button>
+                        )}
+                        <button className="btn btn-sm btn-danger" style={{marginLeft: 8}} onClick={() => deleteUser(user.id)}>
+                          Delete
                         </button>
                       </td>
                     </tr>
@@ -317,6 +382,113 @@ const AdminDashboard = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'reports' && (
+          <div className="reports-section">
+            <div className="section-header">
+              <h2>User Reports</h2>
+              <p>Review and manage user reports</p>
+            </div>
+            
+            {reports.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">📋</div>
+                <h3>No reports yet</h3>
+                <p>User reports will appear here when submitted.</p>
+              </div>
+            ) : (
+              <div className="reports-list">
+                {reports.map(report => (
+                  <div key={report.id} className="report-card">
+                    <div className="report-header">
+                      <div className="report-info">
+                        <h4>{report.report_type.replace('_', ' ').toUpperCase()}</h4>
+                        <p>Reported by: {report.reporter?.username || report.reporter?.email}</p>
+                        <p>Reported user: {report.reported_user?.username || report.reported_user?.email}</p>
+                        <p>Date: {new Date(report.created_at).toLocaleDateString()}</p>
+                      </div>
+                      <span className={`status-badge ${report.status}`}>
+                        {report.status}
+                      </span>
+                    </div>
+                    
+                    <div className="report-description">
+                      <strong>Description:</strong>
+                      <p>{report.description}</p>
+                    </div>
+                    
+                    {report.job && (
+                      <div className="report-context">
+                        <strong>Related Job:</strong> {report.job.title}
+                      </div>
+                    )}
+                    
+                    {report.status === 'pending' && (
+                      <div className="report-actions">
+                        <button 
+                          className="btn btn-success btn-sm"
+                          onClick={() => updateReportStatus(report.id, 'resolved')}
+                        >
+                          Resolve
+                        </button>
+                        <button 
+                          className="btn btn-warning btn-sm"
+                          onClick={() => updateReportStatus(report.id, 'dismissed')}
+                        >
+                          Dismiss
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'chats' && (
+          <div className="chats-section">
+            <div className="section-header">
+              <h2>All Conversations</h2>
+              <p>Monitor all platform conversations</p>
+            </div>
+            
+            {conversations.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">💬</div>
+                <h3>No conversations yet</h3>
+                <p>User conversations will appear here.</p>
+              </div>
+            ) : (
+              <div className="conversations-list">
+                {conversations.map(conversation => (
+                  <div key={conversation.id} className="conversation-card">
+                    <div className="conversation-header">
+                      <div className="conversation-participants">
+                        <h4>
+                          {conversation.client?.username || conversation.client?.email} ↔ 
+                          {conversation.freelancer?.username || conversation.freelancer?.email}
+                        </h4>
+                        <p>Last updated: {new Date(conversation.updated_at).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="conversation-messages">
+                      <strong>Recent Messages:</strong>
+                      {conversation.messages && conversation.messages.slice(-3).map(message => (
+                        <div key={message.id} className="message-preview">
+                          <span className="message-sender">{message.sender?.username}:</span>
+                          <span className="message-content">{message.content}</span>
+                          <span className="message-time">{new Date(message.created_at).toLocaleTimeString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

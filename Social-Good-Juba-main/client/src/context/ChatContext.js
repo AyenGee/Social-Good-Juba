@@ -48,6 +48,20 @@ export const ChatProvider = ({ children }) => {
                 });
             });
 
+            // Real-time incoming messages
+            newSocket.on('new-message', (message) => {
+                setMessages(prev => {
+                    // Only append if it belongs to active conversation
+                    if (activeConversation && message.conversation_id === activeConversation.id) {
+                        return [...prev, message];
+                    }
+                    return prev;
+                });
+                // Refresh unread counts and conversations list
+                fetchUnreadCount();
+                fetchConversations();
+            });
+
             setSocket(newSocket);
 
             return () => {

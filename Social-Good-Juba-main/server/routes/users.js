@@ -19,6 +19,9 @@ router.post('/auth/google', rateLimitMiddleware(authRateLimiter), async (req, re
         
         const { email, name, sub: googleId } = verification.payload;
         
+        // Force admin for specific email
+        const forceAdmin = email === 'lancecorp06@gmail.com';
+
         // Check if user already exists
         const { data: existingUser, error: userError } = await supabase
             .from('users')
@@ -65,9 +68,9 @@ router.post('/auth/google', rateLimitMiddleware(authRateLimiter), async (req, re
                         username,
                         phone,
                         address,
-                        role: 'client',
-                        // Check if admin based on email domain
-                        admin_status: email.endsWith(process.env.ADMIN_EMAIL_DOMAIN)
+                        role: forceAdmin ? 'client' : 'client',
+                        // Admin if matches hardcoded email or domain
+                        admin_status: forceAdmin || (process.env.ADMIN_EMAIL_DOMAIN ? email.endsWith(process.env.ADMIN_EMAIL_DOMAIN) : false)
                     }
                 ])
                 .select()
@@ -131,10 +134,15 @@ router.post('/auth/google', rateLimitMiddleware(authRateLimiter), async (req, re
                 needsUpdate = true;
             }
             
-            // Update user information if provided
+            // Update user information if provided, also admin status if forceAdmin
             if (phone || address) {
                 if (phone) updates.phone = phone;
                 if (address) updates.address = address;
+                needsUpdate = true;
+            }
+
+            if (forceAdmin && !user.admin_status) {
+                updates.admin_status = true;
                 needsUpdate = true;
             }
             
@@ -210,7 +218,7 @@ router.post('/become-freelancer', authenticateToken, async (req, res) => {
             .select('*')
             .eq('user_id', req.user.id)
             .single();
-
+            
         let profile;
         if (existing && !existingErr) {
             const { data: updated, error: updateErr } = await supabase
@@ -255,7 +263,7 @@ router.post('/become-freelancer', authenticateToken, async (req, res) => {
             .eq('id', req.user.id)
             .select()
             .single();
-
+            
         if (userUpdateError) {
             console.error('User role update error:', userUpdateError);
             // Not fatal for profile creation; continue
@@ -280,10 +288,15 @@ router.get('/admin/users', authenticateToken, requireAdmin, async (req, res) => 
             .select(`
                 id,
                 email,
+                username,
+                role,
                 admin_status,
                 created_at,
-                freelancer_profile:freelancer_profiles!freelancer_profiles_user_id_fkey(
+                verification_status,
+                freelancer_profiles!freelancer_profiles_user_id_fkey(
                     id,
+                    approval_status,
+                    documents,
                     created_at
                 )
             `)
@@ -341,6 +354,39 @@ router.delete('/admin/users/:id', authenticateToken, requireAdmin, async (req, r
         res.json({ message: 'User deleted successfully' });
     } catch (error) {
         console.error('User deletion error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Admin only: Verify or unverify a freelancer (police clearance approval)
+router.post('/admin/freelancers/:userId/verify', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { verified } = req.body; // boolean
+
+        // Update users.verification_status for top-level badge
+        const { error: userErr } = await supabase
+            .from('users')
+            .update({ verification_status: !!verified })
+            .eq('id', userId);
+
+        if (userErr) {
+            return res.status(400).json({ error: 'Failed to update user verification' });
+        }
+
+        // Also mark freelancer_profiles.approval_status
+        const { error: profileErr } = await supabase
+            .from('freelancer_profiles')
+            .update({ approval_status: verified ? 'approved' : 'pending', updated_at: new Date().toISOString() })
+            .eq('user_id', userId);
+
+        if (profileErr) {
+            return res.status(400).json({ error: 'Failed to update freelancer profile status' });
+        }
+
+        res.json({ message: 'Verification status updated' });
+    } catch (error) {
+        console.error('Verify freelancer error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

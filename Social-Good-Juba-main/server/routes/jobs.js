@@ -373,17 +373,52 @@ router.get('/:id/applications', rateLimitMiddleware(generalRateLimiter), async (
             .from('job_applications')
             .select(`
                 *,
-                freelancer:users(id, username, email)
+                freelancer:users!job_applications_freelancer_id_fkey(
+                    id,
+                    username,
+                    email,
+                    verification_status,
+                    freelancer_profiles!freelancer_profiles_user_id_fkey(
+                        bio,
+                        experience_years,
+                        service_areas,
+                        hourly_rate_min,
+                        hourly_rate_max,
+                        languages_spoken,
+                        transportation_available,
+                        insurance_coverage,
+                        documents,
+                        certifications
+                    )
+                )
             `)
             .eq('job_id', id)
-            .order('created_at', { ascending: false });
+            .order('application_timestamp', { ascending: false });
             
         if (error) {
             console.error('Applications fetch error:', error);
             return res.status(400).json({ error: 'Failed to fetch applications' });
         }
         
-        res.json(applications || []);
+        // Enrich with freelancer profile data
+        const enriched = (applications || []).map(app => {
+            // Normalize freelancer_profiles to single object
+            const profile = Array.isArray(app.freelancer?.freelancer_profiles) 
+                ? app.freelancer.freelancer_profiles[0] 
+                : app.freelancer?.freelancer_profiles;
+            
+            return {
+                ...app,
+                freelancer: {
+                    ...app.freelancer,
+                    profile,
+                    ratingAvg: 0, // Will be calculated separately if needed
+                    ratingCount: 0
+                }
+            };
+        });
+        
+        res.json(enriched);
     } catch (error) {
         console.error('Applications fetch error:', error);
         res.status(500).json({ error: 'Internal server error' });

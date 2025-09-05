@@ -70,8 +70,7 @@ const NotificationDropdown = ({ onClose }) => {
             
             <div className="notification-list">
                 {loading ? (
-                    <div className="loading-spinner">
-                        <div className="spinner"></div>
+                    <div className="loading-text">
                         <p>Loading notifications...</p>
                     </div>
                 ) : notifications.length === 0 ? (
